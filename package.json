@@ -7,6 +7,7 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "build": "npm run build --prefix frontend",
     "fetch:matches": "node scripts/fetch-premier-league-matches.mjs",
+    "fetch:champions-league-matches": "node scripts/fetch-premier-league-matches.mjs CL",
     "sync:matches": "node scripts/sync-premier-league-matches.mjs",
     "deploy:worker": "npm run deploy --prefix worker",
     "install:all": "npm install && npm install --prefix worker && npm install --prefix frontend"

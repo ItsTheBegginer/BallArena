@@ -5,7 +5,7 @@ import { getFixtureStatus, getLocalMatches } from '../data/fixtures';
 
 const TOURNAMENTS = [
   { id: 'premier-league', label: 'Premier League', competition: 'premier league', icon: '🦁' },
-  { id: 'nations-league', label: 'Nations League', competition: 'nations league', icon: '🌍' }
+  { id: 'champions-league', label: 'UEFA Champions League', competition: 'champions league', icon: '🏆' }
 ];
 
 function MatchSection({ title, fixtures, now, icon }) {

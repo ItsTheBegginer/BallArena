@@ -34,17 +34,25 @@ Open `http://localhost:5173`, choose a listed match and team, and chat.
 
 ## Update local matches
 
-Fetch upcoming Premier League matches once and store them in `frontend/src/data/matches.json`:
+Fetch upcoming Premier League matches:
 
 ```bash
 npm run fetch:matches
 ```
 
-The script keeps upcoming matches through 1 January 2027, inclusive.
+Fetch UEFA Champions League matches through 31 December 2026, inclusive:
 
-Review that file and manually delete matches that should not have a chat room. The frontend reads only the remaining local matches and makes no Football-Data API requests at runtime.
+```bash
+npm run fetch:champions-league-matches
+```
 
-The Football-Data Free tier allows 10 calls per minute. The script uses a stricter local limit of one call every 60 seconds, records the attempt before contacting the API, and prevents concurrent runs. If the cooldown is active or the API returns `429`, no additional request is made and the existing match file is preserved.
+Both commands use the Football-Data.org free-tier API. A shared cooldown permits at most one request every 60 seconds, below the 10-calls-per-minute limit. Each fetch refreshes only that competition's fixtures and preserves the others in `frontend/src/data/matches.json`.
+
+The fetch commands need a Football-Data.org API key. They read `FOOTBALL_API_KEY` or `VITE_FOOTBALL_API_KEY` from the project-root `.env` or shell environment; `frontend/.env.development` is also supported. Keep the real key out of committed files.
+
+Review `frontend/src/data/matches.json` and manually delete matches you do not want to display. Run `npm run sync:matches` afterward to publish the curated list to the Worker. The frontend makes no Football-Data API requests at runtime.
+
+The fetch script records each attempt before contacting the API and prevents concurrent runs. If the cooldown is active or the API returns `429`, no additional request is made and the existing match files are preserved.
 
 ## How it works
 
@@ -60,6 +68,7 @@ The Football-Data Free tier allows 10 calls per minute. The script uses a strict
 
 | Variable             | Description                              |
 | -------------------- | ---------------------------------------- |
+| `VITE_FOOTBALL_API_KEY` | Football-Data.org API key used by the local fixture fetch scripts |
 | `VITE_CHAT_HTTP_URL` | Worker HTTP URL for status checks        |
 | `VITE_CHAT_WS_URL`   | Worker WebSocket URL                     |
 | `VITE_WAITLIST_URL`  | WhatsApp/Telegram link when room is full |
@@ -94,7 +103,7 @@ Set `VITE_CHAT_HTTP_URL` and `VITE_CHAT_WS_URL` to your deployed Worker URL at b
 
 ## Customizing fixtures
 
-Edit `frontend/src/data/matches.json` to remove matches or adjust the locally stored list. Run `npm run fetch:matches` when you want to refresh it from Football-Data.org.
+Edit `frontend/src/data/matches.json` to remove matches or adjust the locally stored list. Run `npm run fetch:matches` or `npm run fetch:champions-league-matches` to refresh the corresponding competition from Football-Data.org.
 
 ## Phase 2 (not built)
 
