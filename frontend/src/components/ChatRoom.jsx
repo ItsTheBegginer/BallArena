@@ -140,6 +140,11 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
 
   const connect = useCallback(
     (chosenTeam) => {
+      if (!CHAT_WS_URL) {
+        setStatus('config_error');
+        return;
+      }
+
       hasOpenedRef.current = false;
       setStatus('connecting');
 
@@ -205,6 +210,10 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
   const checkAndJoin = useCallback(
     async (chosenTeam) => {
       setTeam(chosenTeam);
+      if (!CHAT_WS_URL) {
+        setStatus('config_error');
+        return;
+      }
       setStatus('checking');
       const data = await fetchOccupancy();
       if (data?.matchOpen === false) {
@@ -436,6 +445,17 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
         >
           Reconnect
         </button>
+      </div>
+    );
+  }
+
+  if (status === 'config_error') {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+        <p className="text-sm font-semibold text-slate-200">Live chat is not configured for this deployment.</p>
+        <p className="text-sm text-slate-400">
+          Set <code className="rounded bg-slate-800 px-1.5 py-0.5 text-emerald-300">VITE_CHAT_WS_URL</code> in the frontend build environment and redeploy.
+        </p>
       </div>
     );
   }
