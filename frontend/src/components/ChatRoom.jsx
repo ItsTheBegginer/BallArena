@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { CHAT_WS_URL } from '../config';
 
 const HTTP_WORKER_URL = import.meta.env.VITE_CHAT_HTTP_URL || 'http://localhost:8787';
-const WS_WORKER_URL = import.meta.env.VITE_CHAT_WS_URL || 'ws://localhost:8787';
 const WAITLIST_URL = import.meta.env.VITE_WAITLIST_URL || 'https://wa.me/';
 
 const BADGES = [
@@ -150,7 +150,7 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
         badge: selectedBadge
       });
 
-      const ws = new WebSocket(`${WS_WORKER_URL}/room/${matchId}?${params.toString()}`);
+      const ws = new WebSocket(`${CHAT_WS_URL}/room/${matchId}?${params.toString()}`);
       wsRef.current = ws;
 
       ws.onopen = () => {
