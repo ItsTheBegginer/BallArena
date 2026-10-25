@@ -101,6 +101,12 @@ npm run build
 
 Set `VITE_CHAT_HTTP_URL` and `VITE_CHAT_WS_URL` to your deployed Worker URL at build time.
 
+## Install BallArena on mobile
+
+The frontend is installable as a Progressive Web App. Deploy it over HTTPS, then open the site in a supported mobile browser and choose **Add to Home Screen** (iOS Safari) or **Install app / Add to Home screen** (Android Chrome). The browser may decide when to display its install prompt.
+
+The service worker is enabled in production builds only. It caches the app shell and static assets for offline loading; live chat, room status, and other network-backed features still require a connection. Publish a new frontend deployment to deliver service-worker updates.
+
 ## Customizing fixtures
 
 Edit `frontend/src/data/matches.json` to remove matches or adjust the locally stored list. Run `npm run fetch:matches` or `npm run fetch:champions-league-matches` to refresh the corresponding competition from Football-Data.org.

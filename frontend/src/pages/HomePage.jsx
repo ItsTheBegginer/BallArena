@@ -32,6 +32,7 @@ function MatchSection({ title, fixtures, now, icon }) {
 export default function HomePage() {
   const [now, setNow] = useState(() => Date.now());
   const [matches] = useState(() => getLocalMatches());
+  const [showInstallHelp, setShowInstallHelp] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMatchday, setSelectedMatchday] = useState('all'); // 'all' or matchday number
   const [selectedTournamentId, setSelectedTournamentId] = useState('premier-league');
@@ -70,6 +71,67 @@ export default function HomePage() {
 
   return (
     <Layout>
+      {showInstallHelp && (
+        <aside
+          aria-labelledby="install-help-title"
+          className="mb-4 rounded-2xl border border-emerald-500/30 bg-slate-900 p-4 shadow-lg shadow-black/10 sm:mb-6 sm:p-5"
+        >
+          <div className="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-xl text-emerald-300"
+            >
+              +
+            </span>
+            <button
+              type="button"
+              aria-label="Dismiss home screen instructions"
+              onClick={() => setShowInstallHelp(false)}
+              className="order-3 -mr-1 -mt-1 ml-auto shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+            >
+              ✕
+            </button>
+            <div className="min-w-0 flex-1">
+              <h2 id="install-help-title" className="text-base font-bold leading-tight text-white sm:text-lg">
+                Add BallArena to your home screen
+              </h2>
+              <p className="mt-1 text-sm leading-relaxed text-slate-300">
+                Get back to the match in one tap. Choose your device:
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <section className="rounded-xl border border-slate-700 bg-slate-950/70 p-3.5 sm:p-4">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                <span aria-hidden="true" className="text-base">🤖</span>
+                Android
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-200">
+                In <strong className="font-semibold text-white">Chrome</strong>, tap the menu{' '}
+                <span className="whitespace-nowrap rounded bg-slate-800 px-1.5 py-0.5 font-semibold text-white" aria-label="three-dot menu">
+                  ⋮
+                </span>
+                , then choose <strong className="font-semibold text-emerald-300">Install app</strong> or{' '}
+                <strong className="font-semibold text-emerald-300">Add to Home screen</strong>.
+              </p>
+            </section>
+            <section className="rounded-xl border border-slate-700 bg-slate-950/70 p-3.5 sm:p-4">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                <span aria-hidden="true" className="text-base">📱</span>
+                iPhone / iPad
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-200">
+                Open in <strong className="font-semibold text-white">Safari</strong>. Tap{' '}
+                <strong className="font-semibold text-emerald-300">Share</strong>{' '}
+                <span aria-label="Share button" className="whitespace-nowrap">□↑</span>, then{' '}
+                <strong className="font-semibold text-emerald-300">Add to Home Screen</strong> →{' '}
+                <strong className="font-semibold text-emerald-300">Add</strong>.
+              </p>
+            </section>
+          </div>
+        </aside>
+      )}
+
       <div className="mb-6 flex flex-wrap gap-2" role="tablist" aria-label="Choose tournament">
         {TOURNAMENTS.map((tournament) => {
           const isSelected = tournament.id === selectedTournamentId;
