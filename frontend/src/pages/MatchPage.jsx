@@ -23,9 +23,9 @@ export default function MatchPage() {
   if (!fixture) {
     return (
       <Layout>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center">
+        <div className="rounded-3xl border border-white/[0.07] bg-[#15161e] p-8 text-center">
           <p className="text-slate-400">Premier League match not found.</p>
-          <Link to="/" className="mt-4 inline-block text-emerald-400 hover:text-emerald-300">
+          <Link to="/" className="mt-4 inline-block text-violet-300 hover:text-violet-200">
             ← Back to Premier League matches
           </Link>
         </div>
@@ -40,70 +40,70 @@ export default function MatchPage() {
 
   return (
     <Layout>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200">
-          <span>←</span> Premier League Matches
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
+        <Link to="/" className="inline-flex items-center gap-2 rounded-full border border-white/[0.07] bg-white/[0.03] px-3.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/[0.08] hover:text-white">
+          <span aria-hidden="true">←</span> All matches
         </Link>
 
         {chatEnabled ? (
           status === 'live' && (
-            <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            <span className="flex items-center gap-1.5 rounded-full border border-rose-400/20 bg-rose-400/10 px-3 py-1.5 text-[10px] font-bold tracking-wide text-rose-300 sm:text-xs">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-rose-400" />
               <span className="hidden sm:inline">LIVE STADIUM FAN ARENA</span>
               <span className="sm:hidden">LIVE ARENA</span>
             </span>
           )
         ) : (
-          <span className="flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-400">
+          <span className="flex items-center gap-1.5 rounded-full border border-rose-400/20 bg-rose-400/10 px-3 py-1.5 text-[10px] font-bold tracking-wide text-rose-300 sm:text-xs">
             🚫 CHAT ROOM DISABLED
           </span>
         )}
       </div>
 
       {/* Match Score & Stadium Header */}
-      <div className="mb-5 overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 p-4 shadow-2xl sm:mb-6 sm:p-6">
-        <div className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-emerald-400">{fixture.competition}</span>
-          <span>{fixture.venue}</span>
+      <div className="relative mb-5 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#171821] p-4 shadow-xl shadow-black/20 sm:mb-7 sm:p-7">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-32 h-64 w-64 rounded-full bg-violet-600/20 blur-3xl" />
+        <div className="relative flex flex-col gap-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-xs">
+          <span className="text-violet-300">{fixture.competition}</span>
+          <span className="truncate">{fixture.venue}</span>
         </div>
 
-        <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:flex sm:gap-4">
-          {/* Home Team */}
-          <div className="flex flex-1 flex-col items-end text-right">
-            <div className="flex items-center gap-3">
-              <p className="break-words text-lg font-black text-slate-100 sm:text-2xl">{fixture.homeTeam}</p>
-            </div>
-            <span className="text-xs text-blue-400 font-medium">Home Squad</span>
+        <div className="relative mt-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:mt-8 sm:gap-5">
+          <div className="flex min-w-0 flex-col items-center gap-2.5 text-center sm:gap-3">
+            <span className="flex h-14 w-14 items-center justify-center rounded-[20px] border border-violet-300/15 bg-gradient-to-br from-violet-400/25 to-fuchsia-500/10 text-xl font-black text-violet-100 shadow-lg shadow-violet-950/30 sm:h-20 sm:w-20 sm:text-3xl">
+              {fixture.homeTeam.slice(0, 1)}
+            </span>
+            <p className="w-full break-words text-sm font-black leading-tight text-white sm:text-2xl">{fixture.homeTeam}</p>
+            <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500 sm:text-[10px]">Home</span>
           </div>
 
-          {/* Score & Time */}
-          <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-slate-800 bg-slate-950 px-5 py-3 shadow-inner">
-            <div className="text-xl font-black tracking-wider text-slate-100 sm:text-3xl">
+          <div className="flex shrink-0 flex-col items-center justify-center px-1">
+            <div className="rounded-2xl border border-white/[0.08] bg-black/25 px-3 py-2 text-xl font-black tracking-wider text-white shadow-inner sm:px-6 sm:py-3 sm:text-4xl">
               {hasScore ? `${fixture.homeScore} : ${fixture.awayScore}` : 'VS'}
             </div>
-            <div className="mt-1">
+            <div className="mt-2">
               {status === 'live' && minute !== null ? (
-                <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-300">
-                  {minute}&apos; IN PLAY
+                <span className="rounded-full border border-rose-400/20 bg-rose-400/10 px-2.5 py-1 text-[9px] font-bold tracking-wide text-rose-300 sm:text-xs">
+                  {minute}&apos; LIVE
                 </span>
               ) : (
-                <span className="text-xs text-slate-400 font-medium">{formatKickoff(fixture.kickoff)}</span>
+                <span className="text-center text-[10px] font-medium text-slate-400 sm:text-xs">{formatKickoff(fixture.kickoff)}</span>
               )}
             </div>
           </div>
 
-          {/* Away Team */}
-          <div className="flex flex-1 flex-col items-start text-left">
-            <div className="flex items-center gap-3">
-              <p className="break-words text-lg font-black text-slate-100 sm:text-2xl">{fixture.awayTeam}</p>
-            </div>
-            <span className="text-xs text-red-400 font-medium">Away Squad</span>
+          <div className="flex min-w-0 flex-col items-center gap-2.5 text-center sm:gap-3">
+            <span className="flex h-14 w-14 items-center justify-center rounded-[20px] border border-orange-300/15 bg-gradient-to-br from-orange-300/25 to-rose-500/10 text-xl font-black text-orange-100 shadow-lg shadow-rose-950/30 sm:h-20 sm:w-20 sm:text-3xl">
+              {fixture.awayTeam.slice(0, 1)}
+            </span>
+            <p className="w-full break-words text-sm font-black leading-tight text-white sm:text-2xl">{fixture.awayTeam}</p>
+            <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500 sm:text-[10px]">Away</span>
           </div>
         </div>
       </div>
 
       {/* Main Chat / Status Section */}
-      <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50 shadow-xl">
+      <div className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#12131a] shadow-xl shadow-black/20">
         {!chatEnabled ? (
           <div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
             <span className="text-4xl">🚫</span>

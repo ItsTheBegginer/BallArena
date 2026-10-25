@@ -12,15 +12,17 @@ function MatchSection({ title, fixtures, now, icon }) {
   if (fixtures.length === 0) return null;
 
   return (
-    <section className="mb-8">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="text-xl">{icon}</span>
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">{title}</h2>
-        <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-400">
+    <section className="mb-9 sm:mb-12">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04] text-lg">
+          {icon}
+        </span>
+        <h2 className="text-base font-bold tracking-tight text-white sm:text-lg">{title}</h2>
+        <span className="rounded-full border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-slate-400">
           {fixtures.length}
         </span>
       </div>
-      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-1">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {fixtures.map((fixture) => (
           <MatchCard key={fixture.id} fixture={fixture} now={now} />
         ))}
@@ -74,12 +76,12 @@ export default function HomePage() {
       {showInstallHelp && (
         <aside
           aria-labelledby="install-help-title"
-          className="mb-4 rounded-2xl border border-emerald-500/30 bg-slate-900 p-4 shadow-lg shadow-black/10 sm:mb-6 sm:p-5"
+          className="mb-5 rounded-2xl border border-violet-300/15 bg-[#171821] p-4 shadow-lg shadow-black/10 sm:mb-7 sm:p-5"
         >
           <div className="flex items-start gap-3">
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-xl text-emerald-300"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-xl text-white"
             >
               +
             </span>
@@ -87,7 +89,7 @@ export default function HomePage() {
               type="button"
               aria-label="Dismiss home screen instructions"
               onClick={() => setShowInstallHelp(false)}
-              className="order-3 -mr-1 -mt-1 ml-auto shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+              className="order-3 -mr-1 -mt-1 ml-auto shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
             >
               ✕
             </button>
@@ -101,7 +103,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <section className="rounded-xl border border-slate-700 bg-slate-950/70 p-3.5 sm:p-4">
+            <section className="rounded-xl border border-white/[0.07] bg-black/20 p-3.5 sm:p-4">
               <h3 className="flex items-center gap-2 text-sm font-bold text-white">
                 <span aria-hidden="true" className="text-base">🤖</span>
                 Android
@@ -111,28 +113,28 @@ export default function HomePage() {
                 <span className="whitespace-nowrap rounded bg-slate-800 px-1.5 py-0.5 font-semibold text-white" aria-label="three-dot menu">
                   ⋮
                 </span>
-                , then choose <strong className="font-semibold text-emerald-300">Install app</strong> or{' '}
-                <strong className="font-semibold text-emerald-300">Add to Home screen</strong>.
+                , then choose <strong className="font-semibold text-violet-300">Install app</strong> or{' '}
+                <strong className="font-semibold text-violet-300">Add to Home screen</strong>.
               </p>
             </section>
-            <section className="rounded-xl border border-slate-700 bg-slate-950/70 p-3.5 sm:p-4">
+            <section className="rounded-xl border border-white/[0.07] bg-black/20 p-3.5 sm:p-4">
               <h3 className="flex items-center gap-2 text-sm font-bold text-white">
                 <span aria-hidden="true" className="text-base">📱</span>
                 iPhone / iPad
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-200">
                 Open in <strong className="font-semibold text-white">Safari</strong>. Tap{' '}
-                <strong className="font-semibold text-emerald-300">Share</strong>{' '}
+                <strong className="font-semibold text-violet-300">Share</strong>{' '}
                 <span aria-label="Share button" className="whitespace-nowrap">□↑</span>, then{' '}
-                <strong className="font-semibold text-emerald-300">Add to Home Screen</strong> →{' '}
-                <strong className="font-semibold text-emerald-300">Add</strong>.
+                <strong className="font-semibold text-violet-300">Add to Home Screen</strong> →{' '}
+                <strong className="font-semibold text-violet-300">Add</strong>.
               </p>
             </section>
           </div>
         </aside>
       )}
 
-      <div className="mb-6 flex flex-wrap gap-2" role="tablist" aria-label="Choose tournament">
+      <div className="mb-5 grid grid-cols-2 gap-2" role="tablist" aria-label="Choose tournament">
         {TOURNAMENTS.map((tournament) => {
           const isSelected = tournament.id === selectedTournamentId;
           return (
@@ -146,13 +148,14 @@ export default function HomePage() {
                 setSearchQuery('');
                 setSelectedMatchday('all');
               }}
-              className={`rounded-xl border px-4 py-2.5 text-sm font-bold transition-colors ${
+              aria-label={tournament.label}
+              className={`flex min-h-12 items-center justify-center rounded-2xl border px-2 py-2 text-center text-xs font-semibold transition-colors sm:rounded-full sm:px-4 sm:text-sm ${
                 isSelected
-                  ? 'border-emerald-400 bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20'
-                  : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500 hover:text-white'
+                  ? 'border-white bg-white text-slate-950 shadow-lg shadow-white/10'
+                  : 'border-white/[0.08] bg-white/[0.03] text-slate-300 hover:bg-white/[0.08] hover:text-white'
               }`}
             >
-              <span className="mr-2" aria-hidden="true">{tournament.icon}</span>
+              <span className="mr-1.5 shrink-0" aria-hidden="true">{tournament.icon}</span>
               {tournament.label}
             </button>
           );
@@ -160,57 +163,76 @@ export default function HomePage() {
       </div>
 
       {tournamentMatches.length === 0 ? (
-        <p className="py-12 text-center text-lg font-semibold text-slate-300">Matches coming soon</p>
+        <p className="rounded-3xl border border-white/[0.07] bg-white/[0.03] py-16 text-center text-lg font-semibold text-slate-300">Matches coming soon</p>
       ) : (
         <>
       {/* Tournament Hero Banner */}
-      <div className="relative mb-6 overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-emerald-950/40 to-slate-900 p-4 shadow-2xl sm:mb-8 sm:rounded-3xl sm:p-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-xl">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-400 sm:px-3 sm:text-xs">
-                {selectedTournament.icon} {selectedTournament.label.toUpperCase()}
-              </span>
-              <span className="rounded-full border border-slate-800 bg-slate-950 px-2.5 py-0.5 text-[10px] font-semibold text-slate-400">
-                {tournamentMatches.length} Matches Loaded
-              </span>
-            </div>
-            <h1 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-4xl">
-              {selectedTournament.label} Arena
-            </h1>
-            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
-              Live fixtures and fan chat rooms for {selectedTournament.label}.
-            </p>
+      <div className="relative mb-8 overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#171821] p-5 shadow-2xl shadow-black/20 sm:mb-10 sm:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-36 h-80 w-80 rounded-full bg-violet-600/20 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 right-24 h-72 w-72 rounded-full bg-fuchsia-600/10 blur-3xl" />
+        <div className="relative">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-300/20 bg-violet-400/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-violet-200 sm:text-xs">
+              {selectedTournament.icon} {selectedTournament.label}
+            </span>
+            <span className="rounded-full border border-white/[0.08] bg-black/20 px-3 py-1.5 text-[10px] font-semibold text-slate-400 sm:text-xs">
+              {tournamentMatches.length} fixtures
+            </span>
           </div>
-        </div>
+          <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
+                Matchday, <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-orange-200 bg-clip-text text-transparent">together.</span>
+              </h1>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400 sm:text-base">
+                Find your match. Pick your side. Join the conversation.
+              </p>
+            </div>
+            <div className="flex gap-2 text-center">
+              <div className="min-w-[78px] rounded-2xl border border-white/[0.07] bg-black/20 px-3 py-2.5">
+                <div className="text-xl font-black text-white">{live.length}</div>
+                <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-300">Live</div>
+              </div>
+              <div className="min-w-[78px] rounded-2xl border border-white/[0.07] bg-black/20 px-3 py-2.5">
+                <div className="text-xl font-black text-white">{upcoming.length}</div>
+                <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Soon</div>
+              </div>
+              <div className="min-w-[78px] rounded-2xl border border-white/[0.07] bg-black/20 px-3 py-2.5">
+                <div className="text-xl font-black text-white">{finished.length}</div>
+                <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Final</div>
+              </div>
+            </div>
+          </div>
 
         {/* Search & Matchday Filter Bar */}
-        <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-center">
+        <div className="mt-6 flex flex-col gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search team (e.g. Arsenal, Man City, Liverpool)..."
-              className="w-full rounded-xl border border-slate-800 bg-slate-950/90 px-3.5 py-3 text-xs text-slate-100 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none shadow-inner sm:px-4 sm:py-2.5"
+              placeholder="Search teams or competition"
+              aria-label="Search teams or competition"
+              className="w-full rounded-2xl border border-white/[0.08] bg-black/25 px-4 py-3.5 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/10 sm:py-3"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-200"
+                aria-label="Clear search"
+                className="absolute right-3 top-3 text-sm text-slate-400 hover:text-white"
               >
                 ✕
               </button>
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-2 sm:justify-start">
-            <label className="text-xs font-medium text-slate-400 shrink-0">Matchday:</label>
+          <div className="flex items-center gap-2 sm:w-auto">
+            <label className="text-xs font-medium text-slate-400 shrink-0">Round</label>
             <select
               value={selectedMatchday}
               onChange={(e) => setSelectedMatchday(e.target.value)}
-              className="min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs font-semibold text-slate-200 focus:border-emerald-500 focus:outline-none sm:flex-none"
+              className="min-w-0 flex-1 rounded-2xl border border-white/[0.08] bg-[#101117] px-3 py-3.5 text-sm font-semibold text-slate-200 outline-none focus:border-violet-400/60 sm:flex-none sm:py-3"
             >
               <option value="all">All Matchdays ({tournamentMatches.length})</option>
               {availableMatchdays.map((md) => (
@@ -221,10 +243,11 @@ export default function HomePage() {
             </select>
           </div>
         </div>
+        </div>
       </div>
 
       {filteredMatches.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center">
+        <div className="rounded-3xl border border-white/[0.07] bg-white/[0.03] p-8 text-center">
           <p className="text-slate-400">No {selectedTournament.label} matches found matching your search filter.</p>
           <button
             type="button"
@@ -232,7 +255,7 @@ export default function HomePage() {
               setSearchQuery('');
               setSelectedMatchday('all');
             }}
-            className="mt-3 text-xs font-semibold text-emerald-400 hover:underline"
+            className="mt-3 text-xs font-semibold text-violet-300 hover:underline"
           >
             Clear Filters
           </button>
