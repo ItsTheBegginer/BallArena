@@ -7,6 +7,12 @@ const TOURNAMENTS = [
   { id: 'premier-league', label: 'Premier League', competition: 'premier league', icon: '🦁' },
   { id: 'champions-league', label: 'UEFA Champions League', competition: 'champions league', icon: '🏆' }
 ];
+function isRunningAsInstalledApp() {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
+  );
+}
 
 function MatchSection({ title, fixtures, now, icon }) {
   if (fixtures.length === 0) return null;
@@ -34,7 +40,7 @@ function MatchSection({ title, fixtures, now, icon }) {
 export default function HomePage() {
   const [now, setNow] = useState(() => Date.now());
   const [matches] = useState(() => getLocalMatches());
-  const [showInstallHelp, setShowInstallHelp] = useState(true);
+  const [showInstallHelp, setShowInstallHelp] = useState(() => !isRunningAsInstalledApp());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMatchday, setSelectedMatchday] = useState('all'); // 'all' or matchday number
   const [selectedTournamentId, setSelectedTournamentId] = useState('premier-league');
@@ -46,6 +52,16 @@ export default function HomePage() {
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const hideInstallHelp = () => {
+      setShowInstallHelp(false);
+    };
+
+    if (isRunningAsInstalledApp()) hideInstallHelp();
+    window.addEventListener('appinstalled', hideInstallHelp);
+    return () => window.removeEventListener('appinstalled', hideInstallHelp);
   }, []);
 
   // Filter the selected tournament by search query and matchday.

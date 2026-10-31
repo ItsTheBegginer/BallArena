@@ -24,8 +24,8 @@ const REACTION_EMOJIS = [
   { emoji: '😱', label: 'Shock' }
 ];
 
-const ADJECTIVES = ['Blue', 'Red', 'Swift', 'Loud', 'Lucky', 'Mighty', 'Sharp', 'Bold', 'Golden', 'Apex'];
-const NOUNS = ['Falcon', 'Tiger', 'Striker', 'Keeper', 'Rocket', 'Wolf', 'Eagle', 'Fan', 'Winger', 'Maestro'];
+const ADJECTIVES = ['Blue', 'Red', 'Swift', 'Loud', 'Lucky', 'Mighty', 'Sharp', 'Bold', 'Golden', 'Apex','Rapid', 'Fierce', 'Brave', 'Nimble', 'Vivid', 'Epic', 'Iron', 'Silver', 'Crimson', 'Thunder', 'Stormy', 'Blazing', 'Radiant', 'Stealthy', 'Cunning', 'Fearless', 'Valiant', 'Daring', 'Resolute'];
+const NOUNS = ['Falcon', 'Tiger', 'Striker', 'Keeper', 'Rocket', 'Wolf', 'Eagle', 'Fan', 'Winger', 'Maestro','Legend', 'Champion', 'Phantom', 'Blazer', 'Ranger', 'Viper', 'Titan', 'Storm', 'Shadow', 'Ace', 'Comet', 'Nova', 'Blaze', 'Inferno', 'Cyclone', 'Thunder', 'Lightning', 'Hurricane', 'Tornado', 'Avalanche', 'Quasar', 'Nebula', 'Meteor', 'Galaxy', 'Solar', 'Lunar', 'Cosmic', 'Stellar', 'Orbit', 'Eclipse', 'Aurora', 'Zenith', 'Horizon', 'Pinnacle', 'Summit', 'Vertex', 'Apex'];
 
 function getAnonId() {
   let id = localStorage.getItem('chat_anon_id');
