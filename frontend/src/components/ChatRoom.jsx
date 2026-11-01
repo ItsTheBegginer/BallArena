@@ -61,9 +61,22 @@ function formatTime(ts) {
 
 // Simple Web Audio API Synthesizer for Match Audio FX
 class StadiumAudio {
+  static context = null;
+
+  static getContext() {
+    const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextConstructor) return null;
+    if (!this.context) this.context = new AudioContextConstructor();
+    if (this.context.state === 'suspended') {
+      this.context.resume().catch((error) => console.error('Unable to resume stadium audio', error));
+    }
+    return this.context;
+  }
+
   static playCheer() {
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = this.getContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
@@ -75,12 +88,15 @@ class StadiumAudio {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.3);
-    } catch {}
+    } catch (error) {
+      console.error('Unable to play stadium cheer', error);
+    }
   }
 
   static playGoalHorn() {
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = this.getContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sawtooth';
@@ -92,7 +108,9 @@ class StadiumAudio {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.5);
-    } catch {}
+    } catch (error) {
+      console.error('Unable to play goal horn', error);
+    }
   }
 }
 
@@ -113,58 +131,106 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
 
   const wsRef = useRef(null);
   const listRef = useRef(null);
-  const hasOpenedRef = useRef(false);
   const anonIdRef = useRef(getAnonId());
+  const soundEnabledRef = useRef(soundEnabled);
+  const shouldScrollRef = useRef(true);
+  const reconnectTimerRef = useRef(null);
+  const reconnectAttemptsRef = useRef(0);
+  const connectRef = useRef(null);
+  const scheduleReconnectRef = useRef(null);
+  const mountedRef = useRef(false);
 
   const fetchOccupancy = useCallback(async () => {
-    try {
-      const res = await fetch(`${HTTP_WORKER_URL}/room/${matchId}/status`);
-      const data = await res.json();
-      if (data) {
-        setRoomStats((prev) => ({ ...prev, ...data }));
-      }
-      return data;
-    } catch {
-      return null;
+    const response = await fetch(`${HTTP_WORKER_URL}/room/${matchId}/status`);
+    if (!response.ok) {
+      throw new Error(`Room status request failed (${response.status})`);
     }
+    const data = await response.json();
+    setRoomStats((prev) => ({ ...prev, ...data }));
+    return data;
   }, [matchId]);
 
-  const addFloatingReaction = useCallback((emoji, teamName) => {
-    const id = `${Date.now()}-${Math.random()}`;
-    const leftOffset = 20 + Math.random() * 60; // 20% to 80% width
-    setFloatingReactions((prev) => [...prev.slice(-15), { id, emoji, teamName, leftOffset }]);
-    setTimeout(() => {
-      setFloatingReactions((prev) => prev.filter((r) => r.id !== id));
-    }, 2000);
+  const addFloatingReactions = useCallback((reactions) => {
+    const visibleReactions = reactions.slice(0, 4).map((reaction) => ({
+      ...reaction,
+      id: `${Date.now()}-${Math.random()}`,
+      leftOffset: 20 + Math.random() * 60
+    }));
+    if (visibleReactions.length === 0) return;
+    setFloatingReactions((prev) => [...prev, ...visibleReactions].slice(-12));
+    visibleReactions.forEach(({ id }) => {
+      setTimeout(() => {
+        setFloatingReactions((prev) => prev.filter((reaction) => reaction.id !== id));
+      }, 2000);
+    });
   }, []);
 
+  const scheduleReconnect = useCallback((chosenTeam) => {
+    if (!mountedRef.current || reconnectTimerRef.current) return;
+    const delay = Math.min(1000 * (2 ** reconnectAttemptsRef.current), 30000);
+    reconnectAttemptsRef.current += 1;
+    setStatus('reconnecting');
+    reconnectTimerRef.current = setTimeout(async () => {
+      reconnectTimerRef.current = null;
+      try {
+        const data = await fetchOccupancy();
+        if (data.matchOpen === false) {
+          setStatus(data.windowState === 'upcoming' ? 'not_started' : 'closed');
+          return;
+        }
+        if (data.full) {
+          setStatus('full');
+          return;
+        }
+        connectRef.current?.(chosenTeam);
+      } catch (error) {
+        console.error('Unable to check room status before reconnecting', error);
+        scheduleReconnectRef.current?.(chosenTeam);
+      }
+    }, delay);
+  }, [fetchOccupancy]);
+  scheduleReconnectRef.current = scheduleReconnect;
+
   const connect = useCallback(
-    (chosenTeam) => {
+    (chosenTeam, profile = { name: displayName, badge: selectedBadge }) => {
       if (!CHAT_WS_URL) {
         setStatus('config_error');
         return;
       }
 
-      hasOpenedRef.current = false;
       setStatus('connecting');
 
       const params = new URLSearchParams({
         team: chosenTeam,
         anonId: anonIdRef.current,
-        name: displayName,
-        badge: selectedBadge
+        name: profile.name,
+        badge: profile.badge
       });
 
-      const ws = new WebSocket(`${CHAT_WS_URL}/room/${matchId}?${params.toString()}`);
+      const previousSocket = wsRef.current;
+      wsRef.current = null;
+      if (previousSocket && previousSocket.readyState < WebSocket.CLOSING) {
+        previousSocket.close(1000, 'Replacing chat connection');
+      }
+
+      let ws;
+      try {
+        ws = new WebSocket(`${CHAT_WS_URL}/room/${matchId}?${params.toString()}`);
+      } catch (error) {
+        console.error('Unable to create chat connection', error);
+        setStatus('error');
+        return;
+      }
       wsRef.current = ws;
 
       ws.onopen = () => {
-        hasOpenedRef.current = true;
+        if (wsRef.current !== ws) return;
+        reconnectAttemptsRef.current = 0;
         setStatus('open');
-        fetchOccupancy();
       };
 
       ws.onmessage = (event) => {
+        if (wsRef.current !== ws) return;
         let data;
         try {
           data = JSON.parse(event.data);
@@ -179,33 +245,63 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
             homeCount: data.homeCount || 0,
             awayCount: data.awayCount || 0
           });
-        } else if (data.type === 'message') {
-          setMessages((prev) => [...prev.slice(-199), data]);
+        } else if (data.type === 'message' || data.type === 'messages') {
+          const incoming = data.type === 'message' ? [data] : data.messages;
+          if (!Array.isArray(incoming) || incoming.length === 0) return;
+          const list = listRef.current;
+          shouldScrollRef.current = !list || list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+          setMessages((prev) => [...prev, ...incoming].slice(-200));
         } else if (data.type === 'reaction') {
-          addFloatingReaction(data.emoji, data.team);
-          if (soundEnabled) {
+          addFloatingReactions([{ emoji: data.emoji, teamName: data.team, count: 1 }]);
+          if (soundEnabledRef.current) {
             if (data.emoji === '⚽') StadiumAudio.playGoalHorn();
             else StadiumAudio.playCheer();
           }
         } else if (data.type === 'cheer') {
-          addFloatingReaction(data.team === 'home' ? '📣' : '🎺', data.team);
-          if (soundEnabled) StadiumAudio.playCheer();
+          addFloatingReactions([{ emoji: data.team === 'home' ? '📣' : '🎺', teamName: data.team, count: 1 }]);
+          if (soundEnabledRef.current) StadiumAudio.playCheer();
+        } else if (data.type === 'reaction_totals') {
+          const reactions = Array.isArray(data.reactions) ? data.reactions : [];
+          const cheers = data.cheers || {};
+          const visible = [
+            ...reactions,
+            ...(cheers.home ? [{ emoji: '📣', teamName: 'home', count: cheers.home }] : []),
+            ...(cheers.away ? [{ emoji: '🎺', teamName: 'away', count: cheers.away }] : [])
+          ].sort((first, second) => second.count - first.count).slice(0, 4);
+          addFloatingReactions(visible);
+          if (soundEnabledRef.current) {
+            visible.forEach(({ emoji }) => {
+              if (emoji === '⚽') StadiumAudio.playGoalHorn();
+              else StadiumAudio.playCheer();
+            });
+          }
         } else if (data.type === 'system_error') {
           setSystemAlert(data.message);
           setTimeout(() => setSystemAlert(null), 4000);
         }
       };
 
-      ws.onclose = () => {
-        setStatus((prev) => (prev === 'full' ? 'full' : hasOpenedRef.current ? 'closed' : 'error'));
+      ws.onclose = (event) => {
+        if (wsRef.current !== ws) return;
+        wsRef.current = null;
+        if (event.code === 1000) {
+          setStatus('closed');
+        } else if (event.code === 4000) {
+          setStatus('replaced');
+        } else {
+          scheduleReconnectRef.current?.(chosenTeam);
+        }
       };
 
       ws.onerror = () => {
-        if (!hasOpenedRef.current) setStatus('error');
+        if (wsRef.current === ws && ws.readyState === WebSocket.CLOSED) {
+          scheduleReconnectRef.current?.(chosenTeam);
+        }
       };
     },
-    [addFloatingReaction, displayName, fetchOccupancy, matchId, selectedBadge, soundEnabled]
+    [addFloatingReactions, displayName, matchId, selectedBadge]
   );
+  connectRef.current = connect;
 
   const checkAndJoin = useCallback(
     async (chosenTeam) => {
@@ -214,35 +310,52 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
         setStatus('config_error');
         return;
       }
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      reconnectAttemptsRef.current = 0;
       setStatus('checking');
-      const data = await fetchOccupancy();
-      if (data?.matchOpen === false) {
-        setStatus(data.windowState === 'upcoming' ? 'not_started' : 'closed');
-        return;
+      try {
+        const data = await fetchOccupancy();
+        if (data.matchOpen === false) {
+          setStatus(data.windowState === 'upcoming' ? 'not_started' : 'closed');
+          return;
+        }
+        if (data.full) {
+          setStatus('full');
+          return;
+        }
+        connect(chosenTeam);
+      } catch (error) {
+        console.error('Unable to check room status before joining', error);
+        setStatus('error');
       }
-      if (data?.full) {
-        setStatus('full');
-        return;
-      }
-      connect(chosenTeam);
     },
     [connect, fetchOccupancy]
   );
 
   useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    mountedRef.current = true;
     return () => {
-      wsRef.current?.close();
+      mountedRef.current = false;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+      const socket = wsRef.current;
+      wsRef.current = null;
+      socket?.close();
     };
   }, []);
 
   useEffect(() => {
-    if (status !== 'open') return;
-    const interval = setInterval(fetchOccupancy, 15000);
-    return () => clearInterval(interval);
-  }, [fetchOccupancy, status]);
-
-  useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+    if (!shouldScrollRef.current) return;
+    const list = listRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+    shouldScrollRef.current = false;
   }, [messages]);
 
   const handleSend = () => {
@@ -270,9 +383,7 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
     localStorage.setItem('chat_user_badge', newBadge);
     setIsEditingProfile(false);
     if (wsRef.current && status === 'open') {
-      // Reconnect with new profile info
-      wsRef.current.close();
-      connect(team);
+      connect(team, { name: trimmed, badge: newBadge });
     }
   };
 
@@ -400,11 +511,15 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
     );
   }
 
-  if (status === 'checking' || status === 'connecting') {
+  if (status === 'checking' || status === 'connecting' || status === 'reconnecting') {
     return (
       <div className="flex h-80 flex-col items-center justify-center gap-3 p-8 text-center">
         <div className="h-9 w-9 animate-spin rounded-full border-4 border-white/10 border-t-violet-400" />
-        <p className="text-sm font-medium text-slate-300">Entering match arena for {team === 'home' ? homeTeamName : awayTeamName}…</p>
+        <p className="text-sm font-medium text-slate-300">
+          {status === 'reconnecting'
+            ? 'Connection lost. Checking room status and reconnecting…'
+            : `Entering match arena for ${team === 'home' ? homeTeamName : awayTeamName}…`}
+        </p>
       </div>
     );
   }
@@ -441,6 +556,21 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
           className="rounded-xl bg-violet-500 px-6 py-2.5 font-semibold text-white hover:bg-violet-400"
         >
           Reconnect
+        </button>
+      </div>
+    );
+  }
+
+  if (status === 'replaced') {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+        <p className="text-sm text-slate-400">Chat is open in another tab or window for this browser.</p>
+        <button
+          type="button"
+          onClick={() => checkAndJoin(team)}
+          className="rounded-xl bg-violet-500 px-6 py-2.5 font-semibold text-white hover:bg-violet-400"
+        >
+          Reconnect here
         </button>
       </div>
     );
@@ -485,7 +615,7 @@ export default function ChatRoom({ matchId, homeTeamName, awayTeamName }) {
             style={{ left: `${r.leftOffset}%` }}
             className="animate-float-up absolute bottom-20 text-3xl opacity-90 drop-shadow-md"
           >
-            {r.emoji}
+            {r.emoji}{r.count > 1 ? ` ×${r.count}` : ''}
           </div>
         ))}
       </div>

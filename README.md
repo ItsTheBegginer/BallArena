@@ -48,7 +48,7 @@ npm run fetch:champions-league-matches
 
 Both commands use the Football-Data.org free-tier API. A shared cooldown permits at most one request every 60 seconds, below the 10-calls-per-minute limit. Each fetch refreshes only that competition's fixtures and preserves the others in `frontend/src/data/matches.json`.
 
-The fetch commands need a Football-Data.org API key. They read `FOOTBALL_API_KEY` or `VITE_FOOTBALL_API_KEY` from the project-root `.env` or shell environment; `frontend/.env.development` is also supported. Keep the real key out of committed files.
+The fetch commands need a Football-Data.org API key. They read `FOOTBALL_API_KEY` from the project-root `.env` or shell environment; `frontend/.env.development` is also supported. Keep the real key out of committed files.
 
 Review `frontend/src/data/matches.json` and manually delete matches you do not want to display. Run `npm run sync:matches` afterward to publish the curated list to the Worker. The frontend makes no Football-Data API requests at runtime.
 
@@ -61,6 +61,7 @@ The fetch script records each attempt before contacting the API and prevents con
 - **No database** — per-user state lives in WebSocket attachments.
 - **Free cap**: 10,000 users per room; full rooms show a waitlist screen.
 - **Live-only chat**: the match page only renders `<ChatRoom />` while the fixture is live.
+- Chat messages are broadcast in 250 ms batches; reaction and cheer totals are broadcast once per second.
 
 ## Environment variables
 
@@ -68,16 +69,17 @@ The fetch script records each attempt before contacting the API and prevents con
 
 | Variable             | Description                              |
 | -------------------- | ---------------------------------------- |
-| `VITE_FOOTBALL_API_KEY` | Football-Data.org API key used by the local fixture fetch scripts |
 | `VITE_CHAT_HTTP_URL` | Worker HTTP URL for status checks        |
 | `VITE_CHAT_WS_URL`   | Worker WebSocket URL                     |
 | `VITE_WAITLIST_URL`  | WhatsApp/Telegram link when room is full |
 
-### Worker (`worker/wrangler.toml` → `[vars]`)
+### Fixture fetch script
 
-| Variable         | Description                                             |
-| ---------------- | ------------------------------------------------------- |
-| `ALLOWED_ORIGIN` | Frontend origin for CORS (e.g. `http://localhost:5173`) |
+Set `FOOTBALL_API_KEY` in the project-root `.env`, shell environment, or `frontend/.env.development`.
+
+### Worker CORS
+
+The Worker allows `https://ballarena.pages.dev` and local development at `http://localhost:5173` and `http://localhost:5174`. For another frontend origin, add it to `ALLOWED_ORIGINS` in `worker/src/index.js` and redeploy the Worker.
 
 ## Deploy
 
@@ -87,8 +89,6 @@ The fetch script records each attempt before contacting the API and prevents con
 cd worker
 npx wrangler deploy
 ```
-
-Update `ALLOWED_ORIGIN` in `wrangler.toml` to your production frontend URL.
 
 **Frontend:**
 

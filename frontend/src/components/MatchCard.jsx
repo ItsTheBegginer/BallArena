@@ -36,7 +36,7 @@ export default function MatchCard({ fixture, now }) {
         </span>
         <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider sm:text-[10px] ${STATUS_STYLES[status]}`}>
           {status === 'live' && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-300" />}
-          {status === 'live' && minute !== null ? `${STATUS_LABELS.live} · ${minute}'` : STATUS_LABELS[status]}
+          {status === 'live' && minute !== null ? `${STATUS_LABELS.live} · ~${minute}'` : STATUS_LABELS[status]}
         </span>
       </div>
 

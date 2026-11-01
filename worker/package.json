@@ -7,8 +7,5 @@
   },
   "devDependencies": {
     "wrangler": "^4.125.0"
-  },
-  "dependencies": {
-    "ballarena": "file:.."
   }
 }

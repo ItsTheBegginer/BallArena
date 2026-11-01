@@ -1,16 +1,16 @@
 export { RoomObject } from './room.js';
 
-function corsHeaders(env, request) {
-  const configured = env.ALLOWED_ORIGIN;
-  const requestOrigin = request.headers.get('Origin');
+const ALLOWED_ORIGINS = [
+  'https://ballarena.pages.dev',
+  'http://localhost:5173',
+  'http://localhost:5174'
+];
 
-  let allowOrigin = '*';
-  if (configured && configured !== '*') {
-    allowOrigin = requestOrigin === configured ? configured : configured;
-  }
-
+function corsHeaders(request) {
+  const origin = request.headers.get('Origin');
   return {
-    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type'
   };
@@ -19,7 +19,7 @@ function corsHeaders(env, request) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const headers = corsHeaders(env, request);
+    const headers = corsHeaders(request);
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers });
@@ -34,7 +34,7 @@ export default {
 
     const match = url.pathname.match(/^\/room\/([a-zA-Z0-9_-]+)(\/status)?$/);
     if (!match) {
-      return new Response('Not found', { status: 404 });
+      return new Response('Not found', { status: 404, headers });
     }
 
     const matchId = match[1];

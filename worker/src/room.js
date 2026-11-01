@@ -10,11 +10,14 @@ const FREE_USER_LIMIT = 10000;
 const MAX_MESSAGE_LENGTH = 300;
 const MAX_RAW_MESSAGE_LENGTH = 1024; // FIX 7: reject oversized frames before parsing
 const MAX_NAME_LENGTH = 24;
+const ALLOWED_REACTIONS = new Set(['⚽', '🔥', '📺', '🟥', '👏', '🪄', '😂', '😱']);
 const RATE_LIMIT_WINDOW_MS = 10000;
 const RATE_LIMIT_MAX_MESSAGES = 10;
 const HISTORY_LIMIT = 50;
 const HISTORY_SAVE_DELAY_MS = 2000; // FIX 1: at most one storage write per 2s
 const STATS_BROADCAST_DELAY_MS = 1000; // FIX 2: at most one stats broadcast per 1s
+const MESSAGE_BROADCAST_DELAY_MS = 250;
+const REACTION_BROADCAST_DELAY_MS = 1000;
 const ANON_ID_PATTERN = /^[a-zA-Z0-9_-]{8,64}$/; // FIX 5a: UUIDs match this
 
 export class RoomObject {
@@ -24,6 +27,11 @@ export class RoomObject {
     this.recentMessages = [];
     this.saveTimer = null;
     this.statsTimer = null;
+    this.messageTimer = null;
+    this.reactionTimer = null;
+    this.pendingMessages = [];
+    this.pendingReactions = new Map();
+    this.pendingCheers = { home: 0, away: 0 };
 
     // FIX 1: reload history from disk every time the object wakes from
     // hibernation. blockConcurrencyWhile makes sure loading finishes
@@ -113,9 +121,8 @@ export class RoomObject {
     // Send initial statistics
     server.send(JSON.stringify({ type: 'stats', ...this.getStats() }));
 
-    // Send chat history
-    for (const msg of this.recentMessages) {
-      server.send(JSON.stringify(msg));
+    if (this.recentMessages.length > 0) {
+      server.send(JSON.stringify({ type: 'messages', messages: this.recentMessages }));
     }
 
     // FIX 2: batch the stats update for everyone else
@@ -166,6 +173,17 @@ export class RoomObject {
       clearTimeout(this.statsTimer);
       this.statsTimer = null;
     }
+    if (this.messageTimer) {
+      clearTimeout(this.messageTimer);
+      this.messageTimer = null;
+    }
+    if (this.reactionTimer) {
+      clearTimeout(this.reactionTimer);
+      this.reactionTimer = null;
+    }
+    this.pendingMessages = [];
+    this.pendingReactions.clear();
+    this.pendingCheers = { home: 0, away: 0 };
 
     for (const socket of this.ctx.getWebSockets()) {
       try {
@@ -229,16 +247,6 @@ export class RoomObject {
       return;
     }
 
-    let data;
-    try {
-      data = JSON.parse(message);
-    } catch {
-      return;
-    }
-    if (!data || typeof data !== 'object') return;
-
-    // FIX 3: the rate limit applies to EVERY message type, before any
-    // broadcast happens.
     if (!this.checkRateLimit(ws, meta)) {
       try {
         ws.send(
@@ -251,28 +259,29 @@ export class RoomObject {
       return;
     }
 
+    let data;
+    try {
+      data = JSON.parse(message);
+    } catch {
+      return;
+    }
+    if (!data || typeof data !== 'object') return;
+
     // Handle Quick Reaction Event
     if (data.type === 'reaction') {
-      const emoji = typeof data.emoji === 'string' ? sanitizeText(data.emoji.slice(0, 10)) : '⚽';
-      this.broadcast({
-        type: 'reaction',
-        emoji,
-        team: meta.team,
-        name: meta.name,
-        badge: meta.badge,
-        ts: Date.now()
-      });
+      const requestedEmoji = typeof data.emoji === 'string' ? sanitizeText(data.emoji.slice(0, 10)) : '⚽';
+      const emoji = ALLOWED_REACTIONS.has(requestedEmoji) ? requestedEmoji : '⚽';
+      const key = `${meta.team}:${emoji}`;
+      const current = this.pendingReactions.get(key);
+      this.pendingReactions.set(key, { emoji, team: meta.team, count: (current?.count || 0) + 1 });
+      this.scheduleReactionBroadcast();
       return;
     }
 
     // Handle Team Cheer Burst Event
     if (data.type === 'cheer') {
-      this.broadcast({
-        type: 'cheer',
-        team: meta.team,
-        name: meta.name,
-        ts: Date.now()
-      });
+      this.pendingCheers[meta.team] += 1;
+      this.scheduleReactionBroadcast();
       return;
     }
 
@@ -290,7 +299,7 @@ export class RoomObject {
     };
 
     this.pushToHistory(payload);
-    this.broadcast(payload);
+    this.queueMessage(payload);
   }
 
   async webSocketClose(ws, _code, _reason, _wasClean) {
@@ -326,9 +335,35 @@ export class RoomObject {
     if (!this.saveTimer) {
       this.saveTimer = setTimeout(() => {
         this.saveTimer = null;
-        this.ctx.storage.put('history', this.recentMessages);
+        this.ctx.storage.put('history', this.recentMessages).catch((error) => {
+          console.error('Failed to persist chat history', error);
+        });
       }, HISTORY_SAVE_DELAY_MS);
     }
+  }
+
+  queueMessage(message) {
+    this.pendingMessages.push(message);
+    if (this.messageTimer) return;
+    this.messageTimer = setTimeout(() => {
+      this.messageTimer = null;
+      const messages = this.pendingMessages.splice(0);
+      if (messages.length > 0) this.broadcast({ type: 'messages', messages });
+    }, MESSAGE_BROADCAST_DELAY_MS);
+  }
+
+  scheduleReactionBroadcast() {
+    if (this.reactionTimer) return;
+    this.reactionTimer = setTimeout(() => {
+      this.reactionTimer = null;
+      const reactions = [...this.pendingReactions.values()];
+      const cheers = this.pendingCheers;
+      this.pendingReactions.clear();
+      this.pendingCheers = { home: 0, away: 0 };
+      if (reactions.length > 0 || cheers.home > 0 || cheers.away > 0) {
+        this.broadcast({ type: 'reaction_totals', reactions, cheers });
+      }
+    }, REACTION_BROADCAST_DELAY_MS);
   }
 
   broadcast(payload) {

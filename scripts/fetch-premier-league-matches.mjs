@@ -27,14 +27,14 @@ const selectedCompetition = COMPETITIONS[competitionCode];
 const apiUrl = `https://api.football-data.org/v4/competitions/${competitionCode}/matches`;
 
 async function readApiKey() {
-  const environmentKey = process.env.FOOTBALL_API_KEY?.trim() || process.env.VITE_FOOTBALL_API_KEY?.trim();
+  const environmentKey = process.env.FOOTBALL_API_KEY?.trim();
   if (environmentKey) return environmentKey;
 
   for (const path of [rootEnvPath, envPath]) {
     try {
       const content = await readFile(path, 'utf8');
       const line = content.split(/\r?\n/).find((entry) =>
-        entry.startsWith('FOOTBALL_API_KEY=') || entry.startsWith('VITE_FOOTBALL_API_KEY=')
+        entry.startsWith('FOOTBALL_API_KEY=')
       );
       const key = line?.slice(line.indexOf('=') + 1).trim().replace(/^['\"]|['\"]$/g, '');
       if (key) return key;
@@ -55,7 +55,7 @@ function toFixture(match, competition) {
     competition: `${competition.label}${matchday}`,
     venue: `${competition.label} Stadium`,
     kickoff,
-    end: kickoff + 105 * 60 * 1000,
+    end: kickoff + 135 * 60 * 1000,
     homeScore: null,
     awayScore: null,
     matchday: match.matchday,
@@ -71,7 +71,7 @@ async function main() {
 
   const token = await readApiKey();
   if (!token) {
-    throw new Error('Missing FOOTBALL_API_KEY or VITE_FOOTBALL_API_KEY in frontend/.env.development');
+    throw new Error('Missing FOOTBALL_API_KEY in .env or frontend/.env.development');
   }
 
   let lock;

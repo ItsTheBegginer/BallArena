@@ -84,7 +84,7 @@ export default function MatchPage() {
             <div className="mt-2">
               {status === 'live' && minute !== null ? (
                 <span className="rounded-full border border-rose-400/20 bg-rose-400/10 px-2.5 py-1 text-[9px] font-bold tracking-wide text-rose-300 sm:text-xs">
-                  {minute}&apos; LIVE
+                  ~{minute}&apos; LIVE
                 </span>
               ) : (
                 <span className="text-center text-[10px] font-medium text-slate-400 sm:text-xs">{formatKickoff(fixture.kickoff)}</span>
